@@ -164,9 +164,9 @@ let initProcess = async () =>{
         for(const month in years[year]){
             let freeDays = await getFreeDays(year,month)
             //test data
-            if(month == 12 && year == 2021){
-                freeDays = [10,12,15]
-            }
+            // if(month == 12 && year == 2021){
+            //     freeDays = [10,12,15]
+            // }
             if(freeDays.length > 0){
                 allFreeDays.push({
                     year,

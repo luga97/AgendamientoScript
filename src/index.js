@@ -1,93 +1,85 @@
 const axios = require('axios').default;
 const https = require('https');
-const range = require("range");
+const { range } = require("range");
 const moment = require("moment");
 const nodemailer = require('nodemailer');
 const SMTP_CONFIG = require('./config/smtp');
+
+let range28 = range(1, 29);
+let range30 = range(1, 31);
+let range31 = range(1, 32);
+
+const usualYear = {
+    "1": {
+        name: "Enero",
+        days: range31
+    },
+    "2": {
+        name: "Febrero",
+        days: range28
+    },
+    "3": {
+        name: "Marzo",
+        days: range31
+    },
+    "4": {
+        name: "Abril",
+        days: range30
+    },        
+    "5": {
+        name: "Mayo",
+        days: range31
+    },
+    "6": {
+        name: "Junio",
+        days: range30
+    },
+    "7": {
+        name: "Julio",
+        days: range31
+    },
+    "8": {
+        name: "Agosto",
+        days: range31
+    },        
+    "9": {
+        name: "Septiembre",
+        days: range30
+    },
+    "10": {
+        name: "Octubre",
+        days: range31
+    },
+    "11":{
+        name: "Noviembre",
+        days: range30
+    },
+    "12": {
+        name: "Diciembre",
+        days: range31
+    },
+}
+
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
+}
 
-let range28 = range.range(1, 29);
-let range30 = range.range(1, 31);
-let range31 = range.range(1, 32);
 let years = {
     "2021": {
-        "9": {
-            name: "Septiembre",
-            days: range30
-        },
-        "10": {
-            name: "Octubre",
-            days: range31
-        },
-        "11": {
-            name: "Noviembre",
-            days: range30
-        },
-        "12": {
-            name: "Diciembre",
-            days: range31
-        },        
+        "11": usualYear["11"],
+        "12": usualYear["12"]
     },
-    "2022": {
-        "1": {
-            name: "Enero",
-            days: range31
-        },
-        "2": {
-            name: "Febrero",
-            days: range28
-        },
-        "3": {
-            name: "Marzo",
-            days: range31
-        },
-        "4": {
-            name: "Abril",
-            days: range30
-        },        
-        "5": {
-            name: "Mayo",
-            days: range31
-        },
-        "6": {
-            name: "Junio",
-            days: range30
-        },
-        "7": {
-            name: "Julio",
-            days: range31
-        },
-        "8": {
-            name: "Agosto",
-            days: range31
-        },        
-        "9": {
-            name: "Septiembre",
-            days: range30
-        },
-        "10": {
-            name: "Octubre",
-            days: range31
-        },
-        "11":{
-            name: "Noviembre",
-            days: range30
-        },
-        "12": {
-            name: "Diciembre",
-            days: range31
-        },
-    }
+    "2022": usualYear,
 }
 
 
-//evitamos la validacion de SSL certificate
-let httpsAgent = new https.Agent({  
+//* evitamos la validacion de SSL certificate
+let httpsAgent = new https.Agent({
     rejectUnauthorized: false
 });
 
+
+//TODO need to be refactored to work with all the PF centers
 let getUrl = (month,year) => {
     return `https://servicos.dpf.gov.br/agenda-publico-rest/api/data-bloqueada/mes-ano/${month}/${year}/5820/11/1`;
 }
@@ -106,6 +98,7 @@ let getFreeDays = async (year,month) => {
     let monthObject = years[year][month]
     let monthDays = monthObject.days;
     let blockedDays = monthDays
+    //if the conneciton is refused, we need to request again until we get a succes response
     let requestSuccess = false
     while(!requestSuccess){
         try{
@@ -129,6 +122,10 @@ let sendEmail = async (allFreeDays) => {
     });
     console.log("dias libres : ",allFreeDays);
     console.log("texto a enviar: ",textToSend);
+    console.log("host : ",SMTP_CONFIG.host);
+    console.log("port : ",SMTP_CONFIG.port);
+    console.log("user : ",SMTP_CONFIG.user);
+    console.log("pass : ",SMTP_CONFIG.pass);
     const transporter = nodemailer.createTransport({
         host: SMTP_CONFIG.host,
         port: SMTP_CONFIG.port,
@@ -146,27 +143,25 @@ let sendEmail = async (allFreeDays) => {
             text: textToSend,
             subject: "Dias libres para agendamiento",
             from: "Luis Garcia <ldgl1215@gmail.com>",
-            to:"ldgl1215@gmail.com"
+            to:["ldgl1215@gmail.com"]
         })
         console.log("informacion de correo enviado: ", mailsent);
     }catch(err){
         console.error("error al enviar el correo: ",err);
     }
-
-
-
 }
 
 let initProcess = async () =>{
     let allFreeDays = []
     freeDaysBoolean = false
+
     for(const year in years){
         for(const month in years[year]){
             let freeDays = await getFreeDays(year,month)
-            //test data
-            // if(month == 12 && year == 2021){
-            //     freeDays = [10,12,15]
-            // }
+            //* test data
+            if(month == 12 && year == 2021){
+                freeDays = [10,12,15]
+            }
             if(freeDays.length > 0){
                 allFreeDays.push({
                     year,
@@ -178,6 +173,7 @@ let initProcess = async () =>{
             await sleep(500)
         }
     }
+
     if(freeDaysBoolean) {
         await sendEmail(allFreeDays);
     }

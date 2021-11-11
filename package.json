@@ -4,7 +4,7 @@
   "description": "consulta de agendamiento",
   "main": "index.js",
   "scripts": {
-    "start_local": "node -r dotenv/config src",
+    "start_local": "node -r dotenv/config src dotenv_config_path=.env.local",
     "start": "node src"
   },
   "author": "",

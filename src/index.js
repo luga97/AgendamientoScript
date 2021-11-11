@@ -122,10 +122,6 @@ let sendEmail = async (allFreeDays) => {
     });
     console.log("dias libres : ",allFreeDays);
     console.log("texto a enviar: ",textToSend);
-    console.log("host : ",SMTP_CONFIG.host);
-    console.log("port : ",SMTP_CONFIG.port);
-    console.log("user : ",SMTP_CONFIG.user);
-    console.log("pass : ",SMTP_CONFIG.pass);
     const transporter = nodemailer.createTransport({
         host: SMTP_CONFIG.host,
         port: SMTP_CONFIG.port,
